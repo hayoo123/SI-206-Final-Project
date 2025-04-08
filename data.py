@@ -29,7 +29,7 @@ def fetch_yahoo_data(symbol):
     return hist
 
 
-################# test ##################
+################# api key data  ##################
 import os
 from dotenv import load_dotenv
 import requests
@@ -48,4 +48,25 @@ params = {
 response = requests.get(url, params=params)
 print("Status Code:", response.status_code)
 print("Response:", response.json())
+
+
+######### sort data kinda ########
+import requests
+
+# example URL (you likely already have this set up correctly)
+url = "https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY&symbol=AAPL&apikey=your_api_key"
+
+# make the API call
+response = requests.get(url)
+
+# convert the response to a dictionary
+json_data = response.json()
+
+# extract the actual time series data
+data = json_data['Weekly Time Series']
+
+# now you can do something with 'data', like:
+for date, metrics in data.items():
+    print(f"{date}: {metrics}")
+
 
