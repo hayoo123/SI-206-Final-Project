@@ -1,10 +1,18 @@
+import os
 import requests
 import yfinance as yf
+from dotenv import load_dotenv
 
-# Alpha Vantage Setup
-ALPHA_API_KEY = "your_api_key_here"
+# Load environment variables from .env
+load_dotenv()
+
+
+# Access the API key from the .env file
+ALPHA_API_KEY = os.getenv("ALPHA_API_KEY")
 ALPHA_URL = "https://www.alphavantage.co/query"
 
+
+# Alpha Vantage weekly data
 def fetch_alpha_vantage_data(symbol):
     params = {
         "function": "TIME_SERIES_WEEKLY",
@@ -12,32 +20,32 @@ def fetch_alpha_vantage_data(symbol):
         "apikey": ALPHA_API_KEY
     }
     response = requests.get(ALPHA_URL, params=params)
-    data = response.json()
-    return data
+    return response.json()
 
-# Yahoo Finance with yfinance
+# Yahoo Finance last 7 days
 def fetch_yahoo_data(symbol):
     stock = yf.Ticker(symbol)
-    hist = stock.history(period="7d")  # past 7 days of daily data
+    hist = stock.history(period="7d")
     return hist
 
 
+################# test ##################
 import os
 from dotenv import load_dotenv
 import requests
 
-# Load the .env file
 load_dotenv()
+api_key = os.getenv("ALPHA_API_KEY")
+print("API Key:", api_key)
 
-# Access your API key
-ALPHA_API_KEY = os.getenv("ALPHA_API_KEY")
+url = "https://www.alphavantage.co/query"
+params = {
+    "function": "TIME_SERIES_WEEKLY",
+    "symbol": "AAPL",
+    "apikey": api_key
+}
 
-def fetch_alpha_vantage_data(symbol):
-    base_url = "https://www.alphavantage.co/query"
-    params = {
-        "function": "TIME_SERIES_WEEKLY",
-        "symbol": symbol,
-        "apikey": ALPHA_API_KEY
-    }
-    response = requests.get(base_url, params=params)
-    return response.json()
+response = requests.get(url, params=params)
+print("Status Code:", response.status_code)
+print("Response:", response.json())
+
