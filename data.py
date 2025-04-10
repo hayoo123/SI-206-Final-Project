@@ -144,3 +144,35 @@ if __name__ == "__main__":
     plot_stock_data(symbol, "close")
     plot_stock_data(symbol, "open")
     plot_stock_data(symbol, "high_low_avg")
+
+
+import yfinance as yf
+import matplotlib.pyplot as plt
+
+def fetch_and_plot_daily_high_low_avg(symbol, period="1mo"):
+    # Fetch daily historical data
+    stock = yf.Ticker(symbol)
+    df = stock.history(period=period, interval="1d")  # Daily data
+
+    if df.empty:
+        print("No data found.")
+        return
+
+    # Calculate high-low average for each day
+    df['HighLowAvg'] = (df['High'] + df['Low']) / 2
+
+    # Plotting
+    plt.figure(figsize=(12, 6))
+    plt.plot(df.index, df['HighLowAvg'], marker='o', linestyle='-', color='green', label='Daily High-Low Avg')
+    plt.title(f"{symbol} Daily High-Low Average Prices")
+    plt.xlabel("Date")
+    plt.ylabel("Price ($)")
+    plt.grid(True)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.legend()
+    plt.show()
+
+# Example usage
+fetch_and_plot_daily_high_low_avg("AAPL", period="1mo")  # You can change to "3mo", "6mo", etc.
+
