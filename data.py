@@ -131,6 +131,10 @@ def plot_stock_data(symbol, price_type):
 
 
 # main.py
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
+
 from data_utils import insert_data
 from visualization_utils import plot_stock_data
 
