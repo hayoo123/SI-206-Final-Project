@@ -4,6 +4,7 @@ import yfinance as yf
 from dotenv import load_dotenv
 import time
 
+
 # Load environment variables from .env
 load_dotenv()
 
@@ -357,4 +358,5 @@ datasets_key = os.getenv("FINANCIAL_DATASETS_API_KEY")
 
 print("Alpha Vantage Key:", alpha_key)
 print("Financial Datasets Key:", datasets_key)
+
 
