@@ -4,17 +4,6 @@ import yfinance as yf
 from dotenv import load_dotenv
 import time
 
-
-# Load environment variables from .env
-load_dotenv()
-
-
-import os
-import requests
-import yfinance as yf
-from dotenv import load_dotenv
-import time
-
 # Load environment variables from .env
 load_dotenv()
 
@@ -46,15 +35,15 @@ def fetch_finnhub_data(symbol):
     start_time = int(time.mktime(time.strptime('2017-01-01', '%Y-%m-%d')))
     end_time = int(time.time())
 
-    url = "https://finnhub.io/api/v1/stock/candle"
+    FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")  # make sure it's in .env
+    ...
     params = {
         'symbol': symbol,
         'resolution': 'W',
         'from': start_time,
         'to': end_time,
-        'token': FIN_IO_API_KEY
+        'token': FINNHUB_API_KEY
     }
-
     response = requests.get(url, params=params)
     return response.json()
 
@@ -116,7 +105,7 @@ import sqlite3
 from data import fetch_alpha_vantage_data
 import matplotlib.pyplot as plt
 
-def insert_alpha_data(symbol):
+def insert_alpha_closing_prices(symbol):
     data = fetch_alpha_vantage_data(symbol)
     time_series = data.get("Weekly Time Series", {})
 
@@ -191,7 +180,7 @@ import sqlite3
 from data import fetch_alpha_vantage_data
 import matplotlib.pyplot as plt
 
-def insert_alpha_data(symbol):
+def insert_alpha_opening_prices(symbol):
     data = fetch_alpha_vantage_data(symbol)
     time_series = data.get("Weekly Time Series", {})
 
@@ -263,7 +252,7 @@ import sqlite3
 from data import fetch_alpha_vantage_data
 import matplotlib.pyplot as plt
 
-def insert_alpha_data(symbol):
+def insert_alpha_high_low_avg(symbol):
     data = fetch_alpha_vantage_data(symbol)
     time_series = data.get("Weekly Time Series", {})
 
