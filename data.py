@@ -344,3 +344,17 @@ def plot_daily_high_low_avg(symbol):
 # Run the function for a given symbol (e.g., AAPL)
 if __name__ == "__main__":
     plot_daily_high_low_avg("AAPL")
+
+
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+alpha_key = os.getenv("ALPHA_API_KEY")
+datasets_key = os.getenv("FINANCIAL_DATASETS_API_KEY")
+
+print("Alpha Vantage Key:", alpha_key)
+print("Financial Datasets Key:", datasets_key)
+
