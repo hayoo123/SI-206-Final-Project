@@ -76,3 +76,67 @@ def plot_high_low_avg_comparison(symbol):
     plt.tight_layout()
     plt.grid(True)
     plt.show()
+
+# Bar Chart
+def plot_avg_close_bar(symbol):
+    alpha_data = fetch_alpha_vantage_data(symbol)
+    alpha_series = alpha_data.get("Weekly Time Series", {})
+    alpha_closes = [float(metrics["4. close"]) for _, metrics in list(alpha_series.items())[:6]]
+    alpha_avg = sum(alpha_closes) / len(alpha_closes)
+
+    yahoo_data = fetch_yahoo_data(symbol)
+    yahoo_closes = yahoo_data['Close'].tolist()
+    yahoo_avg = sum(yahoo_closes) / len(yahoo_closes)
+
+    apis = ['Alpha Vantage', 'Yahoo Finance']
+    averages = [alpha_avg, yahoo_avg]
+
+    plt.figure(figsize=(8, 6))
+    plt.bar(apis, averages, color=['blue', 'orange'])
+    plt.title(f"{symbol} Avg Weekly Closing Prices by API")
+    plt.ylabel("Price ($)")
+    plt.tight_layout()
+    plt.show()
+
+# Pie chart
+def plot_volume_pie(symbol):
+    alpha_data = fetch_alpha_vantage_data(symbol)
+    alpha_series = alpha_data.get("Weekly Time Series", {})
+    alpha_volume = sum(int(metrics["5. volume"]) for _, metrics in list(alpha_series.items())[:6])
+
+    yahoo_data = fetch_yahoo_data(symbol)
+    yahoo_volume = sum(yahoo_data['Volume'].tolist())
+
+    sizes = [alpha_volume, yahoo_volume]
+    labels = ['Alpha Vantage', 'Yahoo Finance']
+    colors = ['skyblue', 'lightgreen']
+
+    plt.figure(figsize=(6, 6))
+    plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140)
+    plt.title(f"{symbol} Volume Distribution Across APIs")
+    plt.axis('equal')
+    plt.tight_layout()
+    plt.show()
+
+# Line chart #2
+def plot_multi_symbol_trend(symbols):
+    plt.figure(figsize=(12, 6))
+
+    for symbol in symbols:
+        data = fetch_alpha_vantage_data(symbol)
+        series = data.get("Weekly Time Series", {})
+        dates = []
+        closes = []
+        for date, metrics in sorted(series.items())[:6]:
+            dates.append(date)
+            closes.append(float(metrics["4. close"]))
+        plt.plot(dates, closes, marker='o', label=symbol)
+
+    plt.title("Weekly Closing Prices Across Stocks")
+    plt.xlabel("Date")
+    plt.ylabel("Closing Price ($)")
+    plt.xticks(rotation=45)
+    plt.legend()
+    plt.tight_layout()
+    plt.grid(True)
+    plt.show()
