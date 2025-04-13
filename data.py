@@ -9,10 +9,21 @@ import time
 load_dotenv()
 
 
-# Access the API key from the .env file
-ALPHA_API_KEY = os.getenv("ALPHA_API_KEY")
-ALPHA_URL = "https://www.alphavantage.co/query"
+import os
+import requests
+import yfinance as yf
+from dotenv import load_dotenv
+import time
 
+# Load environment variables from .env
+load_dotenv()
+
+# Access the API keys from the .env file
+ALPHA_API_KEY = os.getenv("ALPHA_API_KEY")
+FIN_IO_API_KEY = os.getenv("FIN_IO_API_KEY")  # This is your fin.io key
+FINANCIALDATASETS_API_KEY = os.getenv("FINANCIALDATASETS_API_KEY")  # Add this line
+
+ALPHA_URL = "https://www.alphavantage.co/query"
 
 # Alpha Vantage weekly data
 def fetch_alpha_vantage_data(symbol):
@@ -30,22 +41,34 @@ def fetch_yahoo_data(symbol):
     hist = stock.history(period="7d")
     return hist
 
-#fin.io API
-symbol = "AAPL"
-start_time = int(time.mktime(time.strptime('2017-01-01', '%Y-%m-%d')))
-end_time = int(time.time())
+# fin.io API (Finnhub) weekly candles
+def fetch_finnhub_data(symbol):
+    start_time = int(time.mktime(time.strptime('2017-01-01', '%Y-%m-%d')))
+    end_time = int(time.time())
 
-url = f"https://finnhub.io/api/v1/stock/candle"
-params = {
-    'symbol': symbol,
-    'resolution': 'W',
-    'from': start_time,
-    'to': end_time,
-    'token': 'FIN.IO_API_KEY'
-}
+    url = "https://finnhub.io/api/v1/stock/candle"
+    params = {
+        'symbol': symbol,
+        'resolution': 'W',
+        'from': start_time,
+        'to': end_time,
+        'token': FIN_IO_API_KEY
+    }
 
-response = requests.get(url, params=params)
-data = response.json()
+    response = requests.get(url, params=params)
+    return response.json()
+
+# FinancialDatasets.ai API
+def fetch_financialdatasets_data(symbol, start_date="2020-01-01", end_date="2024-01-01"):
+    url = f"https://api.financialdatasets.ai/prices/?ticker={symbol}&interval=week&interval_multiplier=1&start_date={start_date}&end_date={end_date}"
+    
+    headers = {
+        "X-Api-Key": FINANCIALDATASETS_API_KEY
+    }
+
+    response = requests.get(url, headers=headers)
+    return response.json()
+
 
 ################# api key data  ##################
 import os
