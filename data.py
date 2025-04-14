@@ -55,3 +55,4 @@ def fetch_financialdatasets_data(symbol, start_date="2020-01-01", end_date="2024
     }
     response = requests.get(url, headers=headers)
     return response.json()
+
