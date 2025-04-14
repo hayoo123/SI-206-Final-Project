@@ -1,5 +1,6 @@
 import sqlite3
 import matplotlib.pyplot as plt
+import pandas as pd 
 from data import fetch_alpha_vantage_data, fetch_yahoo_data
 
 def plot_price(symbol, column, title, color):
@@ -7,14 +8,19 @@ def plot_price(symbol, column, title, color):
     conn = sqlite3.connect("stocks.db")
     cur = conn.cursor()
 
+    # First get the stock_id
     cur.execute("SELECT id FROM stocks WHERE symbol = ?", (symbol,))
-    stock_id = cur.fetchone()[0]
+    result = cur.fetchone()
+    if not result:
+        print(f"No data found for symbol {symbol}")
+        return
+    stock_id = result[0]
 
     if column == "high_low_avg":
         cur.execute("""
             SELECT date, high, low FROM weekly_data 
             WHERE stock_id = ? 
-            ORDER BY date ASC 
+            ORDER BY date DESC 
             LIMIT 25
         """, (stock_id,))
         rows = cur.fetchall()
@@ -24,7 +30,7 @@ def plot_price(symbol, column, title, color):
         cur.execute(f"""
             SELECT date, {column} FROM weekly_data 
             WHERE stock_id = ? 
-            ORDER BY date ASC 
+            ORDER BY date DESC 
             LIMIT 25
         """, (stock_id,))
         rows = cur.fetchall()
@@ -140,3 +146,15 @@ def plot_multi_symbol_trend(symbols):
     plt.tight_layout()
     plt.grid(True)
     plt.show()
+
+
+def save_to_csv(symbol):
+    """Export stock data to CSV."""
+    import pandas as pd
+    with sqlite3.connect("stocks.db") as conn:
+        df = pd.read_sql("""
+            SELECT date, open, close, (high+low)/2 AS avg_hl, volume
+            FROM weekly_data 
+            WHERE stock_id = (SELECT id FROM stocks WHERE symbol = ?)
+        """, conn, params=(symbol,))
+        df.to_csv(f"{symbol}_data.csv", index=False)
