@@ -264,6 +264,44 @@ def plot_api_latency(symbol="AAPL"):
     plt.tight_layout()
     plt.show()
 
+# Graph 5: Timestamps returned per API
+def plot_timestamp_coverage(symbol="AAPL"):
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=30)
+    start = start_date.strftime('%Y-%m-%d')
+    end = end_date.strftime('%Y-%m-%d')
+
+    # Fetch and count unique timestamps per API
+    alpha_data = fetch_alpha_vantage_data(symbol).get("Weekly Time Series", {})
+    alpha_dates = list(alpha_data.keys())
+    
+    yahoo_df = fetch_yahoo_data(symbol, period="30d")
+    yahoo_dates = yahoo_df.index.strftime('%Y-%m-%d').tolist()
+    
+    polygon_data = fetch_polygon_daily_data(symbol, start, end).get("results", [])
+    polygon_dates = [pd.to_datetime(entry["t"], unit="ms").strftime('%Y-%m-%d') for entry in polygon_data]
+    
+    fd_data = fetch_financialdatasets_data(symbol, start, end).get("prices", [])
+    fd_dates = [entry["time"] for entry in fd_data if "time" in entry]
+
+    # Count unique dates
+    timestamp_counts = {
+        "Alpha Vantage": len(set(alpha_dates)),
+        "Yahoo Finance": len(set(yahoo_dates)),
+        "Polygon.io": len(set(polygon_dates)),
+        "FinancialDatasets": len(set(fd_dates))
+    }
+
+    # Plot
+    plt.figure(figsize=(10, 6))
+    plt.bar(timestamp_counts.keys(), timestamp_counts.values(), color='skyblue')
+    plt.title(f"Number of Unique Timestamps Returned (Last 30 Days) - {symbol}")
+    plt.ylabel("Unique Dates")
+    plt.xlabel("API")
+    plt.ylim(0, 35)
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.tight_layout()
+    plt.show()
 
 if __name__ == "__main__":
     symbol = "AAPL"
@@ -275,3 +313,4 @@ if __name__ == "__main__":
     plot_volatility_comparison()
     plot_success_count()
     plot_api_latency(symbol)
+    plot_timestamp_coverage()
