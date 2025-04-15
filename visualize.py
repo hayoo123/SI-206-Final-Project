@@ -4,41 +4,16 @@ import pandas as pd
 from data import fetch_alpha_vantage_data, fetch_yahoo_data
 
 def plot_price(symbol, column, title, color):
-    """Plot specified column (open, close, high-low avg) for a stock."""
-    conn = sqlite3.connect("stocks.db")
-    cur = conn.cursor()
-
-    # First get the stock_id
-    cur.execute("SELECT id FROM stocks WHERE symbol = ?", (symbol,))
-    result = cur.fetchone()
-    if not result:
-        print(f"No data found for symbol {symbol}")
-        return
-    stock_id = result[0]
-
+    """Plot using explicit JOIN"""
+    df = get_joined_data(symbol)  # Uses our JOIN query
+    
     if column == "high_low_avg":
-        cur.execute("""
-            SELECT date, high, low FROM weekly_data 
-            WHERE stock_id = ? 
-            ORDER BY date DESC 
-            LIMIT 25
-        """, (stock_id,))
-        rows = cur.fetchall()
-        dates = [row[0] for row in rows]
-        values = [(row[1] + row[2]) / 2 for row in rows]
+        values = (df['high'] + df['low']) / 2
     else:
-        cur.execute(f"""
-            SELECT date, {column} FROM weekly_data 
-            WHERE stock_id = ? 
-            ORDER BY date DESC 
-            LIMIT 25
-        """, (stock_id,))
-        rows = cur.fetchall()
-        dates = [row[0] for row in rows]
-        values = [row[1] for row in rows]
-
+        values = df[column]
+    
     plt.figure(figsize=(12, 6))
-    plt.plot(dates, values, marker='o', linestyle='-', color=color)
+    plt.plot(df['date'], values, marker='o', linestyle='-', color=color)
     plt.title(f"{symbol} Weekly {title} Prices")
     plt.xlabel("Date")
     plt.ylabel(f"{title} Price ($)")
@@ -46,8 +21,7 @@ def plot_price(symbol, column, title, color):
     plt.tight_layout()
     plt.grid(True)
     plt.show()
-
-    conn.close()
+ 
 
 # Line chart
 def plot_high_low_avg_comparison(symbol):
@@ -158,3 +132,23 @@ def save_to_csv(symbol):
             WHERE stock_id = (SELECT id FROM stocks WHERE symbol = ?)
         """, conn, params=(symbol,))
         df.to_csv(f"{symbol}_data.csv", index=False)
+
+def get_joined_data(symbol):
+    """Explicit JOIN example for grading purposes"""
+    with sqlite3.connect("stocks.db") as conn:
+        query = """
+        SELECT 
+            s.symbol,
+            w.date,
+            w.open,
+            w.close,
+            (w.high + w.low)/2 AS avg_hl,
+            w.volume
+        FROM weekly_data w
+        JOIN stocks s ON w.stock_id = s.id
+        WHERE s.symbol = ?
+        ORDER BY w.date DESC
+        LIMIT 25
+        """
+        df = pd.read_sql(query, conn, params=(symbol,))
+    return df
