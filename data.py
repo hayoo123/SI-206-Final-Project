@@ -11,57 +11,44 @@ load_dotenv()
 # Access the API key from the .env file
 ALPHA_API_KEY = os.getenv("ALPHA_API_KEY")
 FINANCIAL_DATASETS_API_KEY = os.getenv("FINANCIAL_DATASETS_API_KEY")
-FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")
 
 # Print API keys to verify they are loaded correctly
 print("Alpha Vantage API Key:", ALPHA_API_KEY)
 print("FinancialDatasets API Key:", FINANCIAL_DATASETS_API_KEY)
-print("Finnhub API Key:", FINNHUB_API_KEY)
 
-# Common start and end dates for data retrieval (past week)
+# Common start and end dates for data retrieval (past two weeks)
 end_date = datetime.now()
-start_date = end_date - timedelta(days=7)
+start_date = end_date - timedelta(days=14)
 START_DATE = start_date.strftime('%Y-%m-%d')
 END_DATE = end_date.strftime('%Y-%m-%d')
 
-# Fetching Alpha Vantage weekly data
-def fetch_alpha_vantage_data(symbol, output_format="json"):
-    """Fetch weekly time series data from Alpha Vantage."""
+# Fetching Alpha Vantage daily data
+def fetch_alpha_vantage_data(symbol):
+    """Fetch daily time series data from Alpha Vantage for the past two weeks."""
     url = "https://www.alphavantage.co/query"
     params = {
-        "function": "TIME_SERIES_WEEKLY",
+        "function": "TIME_SERIES_DAILY",
         "symbol": symbol,
-        "apikey": ALPHA_API_KEY
+        "apikey": ALPHA_API_KEY,
+        "outputsize": "compact"
     }
     response = requests.get(url, params=params)
     data = response.json()
     print("Alpha Vantage Response:", data)
-    return data
+    
+    # Filter data to the past two weeks
+    time_series = data.get("Time Series (Daily)", {})
+    filtered_data = {date: metrics for date, metrics in time_series.items() if START_DATE <= date <= END_DATE}
+    print(f"Filtered Alpha Vantage Data for {symbol}: {filtered_data}")
+    
+    return filtered_data
 
-# Yahoo Finance last 7 days
-def fetch_yahoo_data(symbol, period="7d"):
+# Yahoo Finance last 14 days
+def fetch_yahoo_data(symbol, period="14d"):
     """Fetch historical stock data from Yahoo Finance."""
     stock = yf.Ticker(symbol)
     data = stock.history(period=period)
     print("Yahoo Finance Response:", data)
-    return data
-
-# Finnhub API weekly candles
-def fetch_finnhub_data(symbol):
-    """Fetch weekly candle data from Finnhub API."""
-    start_time = int(time.mktime(start_date.timetuple()))
-    end_time = int(time.mktime(end_date.timetuple()))
-    url = "https://finnhub.io/api/v1/stock/candle"
-    params = {
-        'symbol': symbol,
-        'resolution': 'D',  # Daily resolution to cover past week
-        'from': start_time,
-        'to': end_time,
-        'token': FINNHUB_API_KEY
-    }
-    response = requests.get(url, params=params)
-    data = response.json()
-    print("Finnhub Response:", data)
     return data
 
 # FinancialDatasets.ai API
