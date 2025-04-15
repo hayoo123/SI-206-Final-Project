@@ -1,0 +1,6 @@
+Average Closing Prices by Stock Symbol
+----------------------------------------
+AAPL: $227.90
+GOOGL: $176.69
+MSFT: $412.17
+TSLA: $334.47
