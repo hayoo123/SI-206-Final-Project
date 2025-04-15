@@ -16,148 +16,70 @@ start_date = end_date - timedelta(days=90)
 start_str = start_date.strftime('%Y-%m-%d')
 end_str = end_date.strftime('%Y-%m-%d')
 
-#### PLOTTING ALL LINE GRAPHS ####
-def plot_alpha_vantage(symbol):
-    data = fetch_alpha_vantage_data(symbol)
-    series = data.get("Weekly Time Series", {})
-    
-    if not series:
-        print("No data returned from Alpha Vantage.")
-        return
-
-    dates = []
-    closes = []
-
-    for date, metrics in sorted(series.items(), reverse=True)[:6]:
-        dates.append(date)
-        closes.append(float(metrics["4. close"]))
-
-    dates.reverse()
-    closes.reverse()
-
-    plt.figure(figsize=(10, 5))
-    plt.plot(dates, closes, marker='o', label='Alpha Vantage', color='blue')
-    plt.title(f"{symbol} - Alpha Vantage Weekly Closing Prices")
-    plt.xlabel("Date")
-    plt.ylabel("Closing Price ($)")
-    plt.xticks(rotation=45)
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-
-def plot_yahoo_finance(symbol):
-    df = fetch_yahoo_data(symbol)
-    if df.empty:
-        print("No data returned from Yahoo Finance.")
-        return
-
-    df.index = pd.to_datetime(df.index)
-    weekly_df = df['Close'].resample('W').last()
-    dates = weekly_df.index.strftime('%Y-%m-%d').tolist()[-6:]
-    closes = weekly_df.tolist()[-6:]
-
-    plt.figure(figsize=(10, 5))
-    plt.plot(dates, closes, marker='o', color='orange', label='Yahoo Finance')
-    plt.title(f"{symbol} - Yahoo Finance Weekly Closing Prices")
-    plt.xlabel("Date")
-    plt.ylabel("Closing Price ($)")
-    plt.xticks(rotation=45)
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-
-def plot_polygon_data(symbol):
-    end = datetime.now()
-    start = end - timedelta(days=10)
-    data = fetch_polygon_daily_data(symbol, start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d'))
-    results = data.get("results", [])
-
-    if not results:
-        print("No data returned from Polygon.io.")
-        return
-
-    last_entries = results[-6:]
-    dates = [pd.to_datetime(entry["t"], unit="ms").strftime('%Y-%m-%d') for entry in last_entries]
-    closes = [entry["c"] for entry in last_entries]
-
-    plt.figure(figsize=(10, 5))
-    plt.plot(dates, closes, marker='o', color='darkred', label='Polygon.io')
-    plt.title(f"{symbol} - Polygon.io Daily Closing Prices")
-    plt.xlabel("Date")
-    plt.ylabel("Closing Price ($)")
-    plt.xticks(rotation=45)
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-
-def plot_financialdatasets(symbol):
-    end = datetime.now()
-    start = end - timedelta(days=10)
-    data = fetch_financialdatasets_data(symbol, start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d'))
-    prices = data.get('prices', [])
-
-    if not prices:
-        print("No data returned from FinancialDatasets.ai.")
-        return
-
-    last_entries = prices[-6:]
-    dates = []
-    closes = []
-
-    for entry in last_entries:
-        date = entry.get('time')
-        close = entry.get('close')
-        if date and close:
-            dates.append(date)
-            closes.append(close)
-
-    plt.figure(figsize=(10, 5))
-    plt.plot(dates, closes, marker='o', color='purple', label='FinancialDatasets.ai')
-    plt.title(f"{symbol} - FinancialDatasets.ai Closing Prices")
-    plt.xlabel("Date")
-    plt.ylabel("Closing Price ($)")
-    plt.xticks(rotation=45)
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
 
 ### NEW GRAPHS###
 
-# Graph 1: Line chart of last 6 closing prices per API
-def plot_price_comparison():
-    av_data = fetch_alpha_vantage_data(symbol).get("Weekly Time Series", {})
-    fd_data = fetch_financialdatasets_data(symbol, start_str, end_str).get("prices", [])
-    poly_data = fetch_polygon_daily_data(symbol, start_str, end_str).get("results", [])
-    yf_data = fetch_yahoo_data(symbol, period="90d")
-
-    plot_df = pd.DataFrame()
-
-    if av_data:
-        av_closes = [(d, float(av_data[d]["4. close"])) for d in sorted(av_data.keys(), reverse=True)[:6]]
-        plot_df['Alpha Vantage'] = pd.Series({d: c for d, c in av_closes})
-
-    if fd_data:
-        fd_closes = [(entry["time"], entry["close"]) for entry in fd_data][-6:]
-        plot_df['FinancialDatasets'] = pd.Series({d: c for d, c in fd_closes})
-
-    if poly_data:
-        poly_closes = [(pd.to_datetime(entry["t"], unit="ms").strftime('%Y-%m-%d'), entry["c"]) for entry in poly_data][-6:]
-        plot_df['Polygon.io'] = pd.Series({d: c for d, c in poly_closes})
-
-    if not yf_data.empty:
-        yf_week = yf_data['Close'].resample('W').last().dropna()
-        yf_closes = yf_week[-6:]
-        plot_df['Yahoo Finance'] = yf_closes
-
-    plot_df = plot_df.sort_index()
-    plot_df.plot(figsize=(12, 6), marker='o')
-    plt.title("Weekly Closing Prices - API Comparison")
-    plt.xlabel("Date")
-    plt.ylabel("Price ($)")
-    plt.grid(True)
-    plt.xticks(rotation=45)
+# Graph 1: Line chart of last week high-low average prices per API
+def plot_high_low_avg_comparison(symbol, start_date, end_date):
+    # Fetch data from APIs
+    alpha_data = fetch_alpha_vantage_data(symbol)
+    yahoo_data = fetch_yahoo_data(symbol)
+    financialdatasets_data = fetch_financialdatasets_data(symbol, start_date, end_date)
+    polygon_data = fetch_polygon_daily_data(symbol, start_date, end_date)
+    
+    # Process Alpha Vantage data
+    alpha_series = alpha_data.get("Time Series (Daily)", {})
+    alpha_dates = []
+    alpha_avg = []
+    for date, metrics in sorted(alpha_series.items()):
+        high = float(metrics["2. high"])
+        low = float(metrics["3. low"])
+        avg = (high + low) / 2
+        alpha_dates.append(date)
+        alpha_avg.append(avg)
+    
+    # Process Yahoo Finance data
+    yahoo_avg = []
+    yahoo_dates = [d.strftime('%Y-%m-%d') for d in yahoo_data.index]
+    for high, low in zip(yahoo_data['High'], yahoo_data['Low']):
+        avg = (high + low) / 2
+        yahoo_avg.append(avg)
+    
+    # Process FinancialDatasets.ai data
+    financialdatasets_avg = []
+    financialdatasets_dates = [entry['time'].split('T')[0] for entry in financialdatasets_data['prices']]
+    for entry in financialdatasets_data['prices']:
+        avg = (entry['high'] + entry['low']) / 2
+        financialdatasets_avg.append(avg)
+    
+    # Process Polygon.io data
+    polygon_avg = []
+    polygon_dates = [pd.to_datetime(entry["t"], unit="ms").strftime('%Y-%m-%d') for entry in polygon_data['results']]
+    for entry in polygon_data['results']:
+        avg = (entry['h'] + entry['l']) / 2
+        polygon_avg.append(avg)
+    
+    # Combine data into a DataFrame
+    plot_df = pd.DataFrame({
+        'Alpha Vantage': pd.Series(alpha_avg, index=alpha_dates),
+        'Yahoo Finance': pd.Series(yahoo_avg, index=yahoo_dates),
+        'FinancialDatasets.ai': pd.Series(financialdatasets_avg, index=financialdatasets_dates),
+        'Polygon.io': pd.Series(polygon_avg, index=polygon_dates)
+    }).sort_index()
+    
+    # Plot data with unique colors and markers
+    plt.figure(figsize=(12, 6))
+    sns.lineplot(data=plot_df, markers=True, dashes=False, palette='tab10')
+    plt.title(f"{symbol} High-Low Average Comparison (Past Week)", fontsize=16)
+    plt.xlabel("Date", fontsize=14)
+    plt.ylabel("Avg High-Low Price ($)", fontsize=14)
+    plt.xticks(rotation=45, fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.legend(title='Data Source', fontsize=12)
     plt.tight_layout()
+    plt.grid(True)
     plt.show()
+
 
 # Graph 2: Boxplot of volatility comparison
 
@@ -304,13 +226,12 @@ def plot_timestamp_coverage(symbol="AAPL"):
     plt.show()
 
 if __name__ == "__main__":
+    start_date = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+    end_date = datetime.now().strftime('%Y-%m-%d')
     symbol = "AAPL"
-    plot_alpha_vantage(symbol)
-    plot_yahoo_finance(symbol)
-    plot_polygon_data(symbol)
-    plot_financialdatasets(symbol)
-    plot_price_comparison()
+    plot_high_low_avg_comparison("AAPL", start_date, end_date)
     plot_volatility_comparison()
     plot_success_count()
     plot_api_latency(symbol)
     plot_timestamp_coverage()
+
