@@ -9,25 +9,22 @@ from data import (
     fetch_financialdatasets_data,
     fetch_polygon_daily_data
 )
-
 symbol = "AAPL"
 end_date = datetime.now()
 start_date = end_date - timedelta(days=90)
 start_str = start_date.strftime('%Y-%m-%d')
 end_str = end_date.strftime('%Y-%m-%d')
 
-
 ### NEW GRAPHS###
-
-# Graph 1: Line chart of last week high-low average prices per API
+# Graph 1: Line chart of last week high and low average prices per API
 def plot_high_low_avg_comparison(symbol, start_date, end_date):
-    # Fetch data from APIs
+    # Fetch data
     alpha_data = fetch_alpha_vantage_data(symbol)
     yahoo_data = fetch_yahoo_data(symbol)
     financialdatasets_data = fetch_financialdatasets_data(symbol, start_date, end_date)
     polygon_data = fetch_polygon_daily_data(symbol, start_date, end_date)
     
-    # Process Alpha Vantage data
+    # Process Alpha data
     alpha_series = alpha_data.get("Time Series (Daily)", {})
     alpha_dates = []
     alpha_avg = []
@@ -37,29 +34,29 @@ def plot_high_low_avg_comparison(symbol, start_date, end_date):
         avg = (high + low) / 2
         alpha_dates.append(date)
         alpha_avg.append(avg)
-    
-    # Process Yahoo Finance data
+
+    # Process Yahoo data
     yahoo_avg = []
     yahoo_dates = [d.strftime('%Y-%m-%d') for d in yahoo_data.index]
     for high, low in zip(yahoo_data['High'], yahoo_data['Low']):
         avg = (high + low) / 2
         yahoo_avg.append(avg)
     
-    # Process FinancialDatasets.ai data
+    # Process FinancialDatasets data
     financialdatasets_avg = []
     financialdatasets_dates = [entry['time'].split('T')[0] for entry in financialdatasets_data['prices']]
     for entry in financialdatasets_data['prices']:
         avg = (entry['high'] + entry['low']) / 2
         financialdatasets_avg.append(avg)
     
-    # Process Polygon.io data
+    # Process Polygon data
     polygon_avg = []
     polygon_dates = [pd.to_datetime(entry["t"], unit="ms").strftime('%Y-%m-%d') for entry in polygon_data['results']]
     for entry in polygon_data['results']:
         avg = (entry['h'] + entry['l']) / 2
         polygon_avg.append(avg)
     
-    # Combine data into a DataFrame
+    # Combine data into DataFrame
     plot_df = pd.DataFrame({
         'Alpha Vantage': pd.Series(alpha_avg, index=alpha_dates),
         'Yahoo Finance': pd.Series(yahoo_avg, index=yahoo_dates),
@@ -67,7 +64,7 @@ def plot_high_low_avg_comparison(symbol, start_date, end_date):
         'Polygon.io': pd.Series(polygon_avg, index=polygon_dates)
     }).sort_index()
     
-    # Plot data with unique colors and markers
+    # Plot data
     plt.figure(figsize=(12, 6))
     sns.lineplot(data=plot_df, markers=True, dashes=False, palette='tab10')
     plt.title(f"{symbol} High-Low Average Comparison (Past Week)", fontsize=16)
@@ -82,11 +79,9 @@ def plot_high_low_avg_comparison(symbol, start_date, end_date):
 
 
 # Graph 2: Boxplot of volatility comparison
-
 def plot_volatility_comparison():
     stocks = ["AAPL", "TSLA", "MSFT", "GOOGL"]
     rows = []
-
     for s in stocks:
         row = {}
         try:
@@ -95,33 +90,29 @@ def plot_volatility_comparison():
             row["Alpha Vantage"] = pd.Series(av_prices).std()
         except:
             row["Alpha Vantage"] = None
-
         try:
             yf = fetch_yahoo_data(s, "90d")['Close'].resample('W').last().dropna()
             row["Yahoo Finance"] = yf.std()
         except:
             row["Yahoo Finance"] = None
-
         try:
             fd = fetch_financialdatasets_data(s, start_str, end_str).get("prices", [])
             fd_prices = [entry["close"] for entry in fd][-6:]
             row["FinancialDatasets"] = pd.Series(fd_prices).std()
         except:
             row["FinancialDatasets"] = None
-
         try:
             poly = fetch_polygon_daily_data(s, start_str, end_str).get("results", [])
             poly_prices = [entry["c"] for entry in poly][-6:]
             row["Polygon.io"] = pd.Series(poly_prices).std()
         except:
             row["Polygon.io"] = None
-
         row["Stock"] = s
         rows.append(row)
 
     df = pd.DataFrame(rows).set_index("Stock").dropna()
     melted = df.reset_index().melt(id_vars="Stock", var_name="API", value_name="Volatility")
-
+    # Plot
     plt.figure(figsize=(10, 6))
     sns.boxplot(data=melted, x="API", y="Volatility", palette="pastel")
     plt.title("Volatility (Standard Deviation) by API")
@@ -130,18 +121,17 @@ def plot_volatility_comparison():
     plt.show()
 
 # Graph 3: Bar chart of successful fetch counts
-
 def plot_success_count():
     apis = ["Alpha Vantage", "Yahoo Finance", "FinancialDatasets", "Polygon.io"]
     stocks = ["AAPL", "TSLA", "MSFT", "GOOGL"]
     success = {api: 0 for api in apis}
-
     for stock in stocks:
         if fetch_alpha_vantage_data(stock).get("Weekly Time Series"): success["Alpha Vantage"] += 1
         if not fetch_yahoo_data(stock, "7d").empty: success["Yahoo Finance"] += 1
         if fetch_financialdatasets_data(stock, start_str, end_str).get("prices", []): success["FinancialDatasets"] += 1
         if fetch_polygon_daily_data(stock, start_str, end_str).get("results", []): success["Polygon.io"] += 1
 
+    # Plot
     plt.figure(figsize=(8, 5))
     pd.Series(success).plot(kind="bar", color="mediumseagreen")
     plt.title("Successful Fetch Count by API")
@@ -160,14 +150,11 @@ def plot_api_latency(symbol="AAPL"):
         "Polygon.io": fetch_polygon_daily_data,
         "FinancialDatasets": fetch_financialdatasets_data,
     }
-
     latencies = {}
-
     for api_name, fetch_func in apis.items():
         start = time.time()
         try:
-            # Use dynamic arguments for different fetchers
-            if api_name == "Yahoo Finance":
+            if api_name == "Alpha Vantage" or api_name == "Yahoo Finance":
                 fetch_func(symbol)
             else:
                 fetch_func(symbol, "2024-01-01", "2024-01-07")
@@ -193,7 +180,6 @@ def plot_timestamp_coverage(symbol="AAPL"):
     start = start_date.strftime('%Y-%m-%d')
     end = end_date.strftime('%Y-%m-%d')
 
-    # Fetch and count unique timestamps per API
     alpha_data = fetch_alpha_vantage_data(symbol).get("Weekly Time Series", {})
     alpha_dates = list(alpha_data.keys())
     
@@ -234,4 +220,3 @@ if __name__ == "__main__":
     plot_success_count()
     plot_api_latency(symbol)
     plot_timestamp_coverage()
-
