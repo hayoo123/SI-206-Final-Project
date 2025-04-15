@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
+import time
 import pandas as pd
 from datetime import datetime, timedelta
 from data import (
@@ -14,6 +15,113 @@ end_date = datetime.now()
 start_date = end_date - timedelta(days=90)
 start_str = start_date.strftime('%Y-%m-%d')
 end_str = end_date.strftime('%Y-%m-%d')
+
+#### PLOTTING ALL LINE GRAPHS ####
+def plot_alpha_vantage(symbol):
+    data = fetch_alpha_vantage_data(symbol)
+    series = data.get("Weekly Time Series", {})
+    
+    if not series:
+        print("No data returned from Alpha Vantage.")
+        return
+
+    dates = []
+    closes = []
+
+    for date, metrics in sorted(series.items(), reverse=True)[:6]:
+        dates.append(date)
+        closes.append(float(metrics["4. close"]))
+
+    dates.reverse()
+    closes.reverse()
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(dates, closes, marker='o', label='Alpha Vantage', color='blue')
+    plt.title(f"{symbol} - Alpha Vantage Weekly Closing Prices")
+    plt.xlabel("Date")
+    plt.ylabel("Closing Price ($)")
+    plt.xticks(rotation=45)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+def plot_yahoo_finance(symbol):
+    df = fetch_yahoo_data(symbol)
+    if df.empty:
+        print("No data returned from Yahoo Finance.")
+        return
+
+    df.index = pd.to_datetime(df.index)
+    weekly_df = df['Close'].resample('W').last()
+    dates = weekly_df.index.strftime('%Y-%m-%d').tolist()[-6:]
+    closes = weekly_df.tolist()[-6:]
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(dates, closes, marker='o', color='orange', label='Yahoo Finance')
+    plt.title(f"{symbol} - Yahoo Finance Weekly Closing Prices")
+    plt.xlabel("Date")
+    plt.ylabel("Closing Price ($)")
+    plt.xticks(rotation=45)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+def plot_polygon_data(symbol):
+    end = datetime.now()
+    start = end - timedelta(days=10)
+    data = fetch_polygon_daily_data(symbol, start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d'))
+    results = data.get("results", [])
+
+    if not results:
+        print("No data returned from Polygon.io.")
+        return
+
+    last_entries = results[-6:]
+    dates = [pd.to_datetime(entry["t"], unit="ms").strftime('%Y-%m-%d') for entry in last_entries]
+    closes = [entry["c"] for entry in last_entries]
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(dates, closes, marker='o', color='darkred', label='Polygon.io')
+    plt.title(f"{symbol} - Polygon.io Daily Closing Prices")
+    plt.xlabel("Date")
+    plt.ylabel("Closing Price ($)")
+    plt.xticks(rotation=45)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+def plot_financialdatasets(symbol):
+    end = datetime.now()
+    start = end - timedelta(days=10)
+    data = fetch_financialdatasets_data(symbol, start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d'))
+    prices = data.get('prices', [])
+
+    if not prices:
+        print("No data returned from FinancialDatasets.ai.")
+        return
+
+    last_entries = prices[-6:]
+    dates = []
+    closes = []
+
+    for entry in last_entries:
+        date = entry.get('time')
+        close = entry.get('close')
+        if date and close:
+            dates.append(date)
+            closes.append(close)
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(dates, closes, marker='o', color='purple', label='FinancialDatasets.ai')
+    plt.title(f"{symbol} - FinancialDatasets.ai Closing Prices")
+    plt.xlabel("Date")
+    plt.ylabel("Closing Price ($)")
+    plt.xticks(rotation=45)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+### NEW GRAPHS###
 
 # Graph 1: Line chart of last 6 closing prices per API
 def plot_price_comparison():
@@ -121,7 +229,49 @@ def plot_success_count():
     plt.tight_layout()
     plt.show()
 
+# Graph 4: Time each API takes to respond
+def plot_api_latency(symbol="AAPL"):
+    """Compare response times (latency) for each API"""
+    apis = {
+        "Alpha Vantage": fetch_alpha_vantage_data,
+        "Yahoo Finance": fetch_yahoo_data,
+        "Polygon.io": fetch_polygon_daily_data,
+        "FinancialDatasets": fetch_financialdatasets_data,
+    }
+
+    latencies = {}
+
+    for api_name, fetch_func in apis.items():
+        start = time.time()
+        try:
+            # Use dynamic arguments for different fetchers
+            if api_name == "Yahoo Finance":
+                fetch_func(symbol)
+            else:
+                fetch_func(symbol, "2024-01-01", "2024-01-07")
+        except Exception as e:
+            print(f"{api_name} error: {e}")
+        end = time.time()
+        latencies[api_name] = round(end - start, 3)
+
+    # Plotting
+    plt.figure(figsize=(8, 5))
+    plt.bar(latencies.keys(), latencies.values(), color='teal')
+    plt.title("API Response Time Comparison")
+    plt.ylabel("Time (seconds)")
+    plt.xlabel("API")
+    plt.grid(axis="y", linestyle="--", alpha=0.7)
+    plt.tight_layout()
+    plt.show()
+
+
 if __name__ == "__main__":
+    symbol = "AAPL"
+    plot_alpha_vantage(symbol)
+    plot_yahoo_finance(symbol)
+    plot_polygon_data(symbol)
+    plot_financialdatasets(symbol)
     plot_price_comparison()
     plot_volatility_comparison()
     plot_success_count()
+    plot_api_latency(symbol)
