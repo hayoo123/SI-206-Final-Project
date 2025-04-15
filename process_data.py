@@ -1,25 +1,28 @@
 import sqlite3
-import pandas as pd
 
-def calculate_average_closing_price():
+def calculate_avg_close_and_write(filename="averages.txt"):
     conn = sqlite3.connect("stocks.db")
     cur = conn.cursor()
+
+    # JOIN stocks + weekly_data and calculate average 
+    cur.execute("""
+        SELECT stocks.symbol, AVG(weekly_data.close)
+        FROM weekly_data
+        JOIN stocks ON weekly_data.stock_id = stocks.id
+        GROUP BY stocks.symbol
+    """)
     
-    query = '''
-    SELECT s.symbol, AVG(w.close) AS avg_close
-    FROM weekly_data w
-    JOIN stocks s ON w.stock_id = s.id
-    GROUP BY s.symbol
-    '''
-    
-    cur.execute(query)
     results = cur.fetchall()
-    
-    with open("average_closing_prices.txt", "w") as file:
+
+    # Write results to text file
+    with open(filename, "w") as f:
+        f.write("Average Closing Prices by Stock Symbol\n")
+        f.write("----------------------------------------\n")
         for symbol, avg_close in results:
-            file.write(f"{symbol}: {avg_close}\n")
-    
+            f.write(f"{symbol}: ${avg_close:.2f}\n")
+
+    print(f"Averages written to {filename}")
     conn.close()
 
 if __name__ == "__main__":
-    calculate_average_closing_price()
+    calculate_avg_close_and_write()
