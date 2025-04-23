@@ -1,6 +1,22 @@
 import sqlite3
 
 def calculate_avg_close_and_write(filename="averages.txt"):
+    """
+    Calculates the average closing price for each stock symbol and writes the results to a text file.
+
+    Parameters:
+    filename (str): The name of the file to write the results to. The default is "averages.txt".
+
+    What the code does:
+    - Connects to the SQLite database ('stocks.db').
+    - Joins the 'stocks' and 'weekly_data' tables on stock_id.
+    - Calculates the average closing price for each symbol.
+    - Writes the formatted results to the specified text file.
+
+    Returns:
+    None: This function does not return any value.
+    """
+    
     conn = sqlite3.connect("stocks.db")
     cur = conn.cursor()
     
