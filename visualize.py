@@ -19,6 +19,23 @@ end_str = end_date.strftime('%Y-%m-%d')
 
 # Graph 1: Line chart of last week high-low average prices per API
 def plot_high_low_avg_comparison(symbol, start_date, end_date):
+    """
+    Plots a line chart comparing the average of daily high and low prices from four APIs over the specified date range.
+
+    Parameters:
+    symbol (str): The stock ticker symbol.
+    start_date (str): Start date in "YYYY-MM-DD" format.
+    end_date (str): End date in "YYYY-MM-DD" format.
+
+    What the code does:
+    - Fetches daily or weekly data from Alpha Vantage, Yahoo Finance, FinancialDatasets.ai, and Polygon.io.
+    - Calculates the average of each day's high and low prices for each API.
+    - Combines all results into a DataFrame indexed by date.
+    - Uses Seaborn to plot a line chart.
+
+    Returns:
+    None: This function does not return a value. It displays a line chart.
+    """
     
     # Fetch data from APIs
     alpha_data = fetch_alpha_vantage_data(symbol)
@@ -84,6 +101,21 @@ def plot_high_low_avg_comparison(symbol, start_date, end_date):
 
 # Graph 2: Boxplot of volatility comparison
 def plot_volatility_comparison():
+    """
+    Creates a boxplot comparing the volatility for four selected stocks across four different APIs.
+
+    Parameters: None
+
+    What the code does:
+    - For each stock it fetches recent data from each API.
+    - Calculates standard deviation of the closing prices over 6 data points per source.
+    - Compiles results into a DataFrame and reshapes for plotting.
+    - Plots a Seaborn boxplot of volatility per API.
+
+    Returns:
+    None: This function does not return a value. It displays a boxplot.
+    """
+    
     stocks = ["AAPL", "TSLA", "MSFT", "GOOGL"]
     rows = []
 
@@ -134,6 +166,21 @@ def plot_volatility_comparison():
 
 # Graph 3: Bar chart of successful fetch counts
 def plot_success_count():
+    """
+    Displays a bar chart showing how many APIs successfully returned stock data for a list of four stocks.
+
+    Parameters: None
+
+    What the code does:
+    - Iterates over four stocks.
+    - Attempts to fetch data from each of the four APIs.
+    - Increments a counter for each successful API response.
+    - Plots a bar chart with total successful fetch counts.
+
+    Returns:
+    None: This function does not return a value. It displays a bar chart.
+    """
+    
     apis = ["Alpha Vantage", "Yahoo Finance", "FinancialDatasets", "Polygon.io"]
     stocks = ["AAPL", "TSLA", "MSFT", "GOOGL"]
     success = {api: 0 for api in apis}
@@ -157,6 +204,22 @@ def plot_success_count():
 
 # Graph 4: Time each API takes to respond
 def plot_api_latency(symbol="AAPL"):
+    """
+    Measures and compares the response time (latency) of each API for fetching stock data.
+
+    Parameters:
+    symbol (str): The stock ticker symbol to query. Default is "AAPL"
+
+    What the code does:
+    - Measures time taken for each API call using 'time.time()'.
+    - Runs test fetches for Alpha Vantage, Yahoo Finance, FinancialDatasets.ai, and Polygon.io.
+    - Compiles results into a dictionary of API names and latency values.
+    - Plots the latencies using a bar chart.
+
+    Returns:
+    None: This function does not return a value. It displays a bar chart.
+    """
+    
     """Compare response times (latency) for each API"""
     apis = {
         "Alpha Vantage": fetch_alpha_vantage_data,
@@ -193,6 +256,22 @@ def plot_api_latency(symbol="AAPL"):
 
 # Graph 5: Timestamps returned per API
 def plot_timestamp_coverage(symbol="AAPL"):
+    """
+    Compares the number of unique timestamps (dates) returned by each API over the last 30 days.
+
+    Parameters:
+    symbol (str): The stock ticker symbol to check. Default is "AAPL"
+
+    What the code does:
+    - Fetches recent stock data from all four APIs.
+    - Extracts and counts unique timestamps or dates from each source.
+    - Compiles counts into a dictionary.
+    - Plots the result as a bar chart comparing data coverage.
+
+    Returns:
+    None: This function does not return a value. It displays a bar chart.
+    """
+    
     end_date = datetime.now()
     start_date = end_date - timedelta(days=30)
     start = start_date.strftime('%Y-%m-%d')
