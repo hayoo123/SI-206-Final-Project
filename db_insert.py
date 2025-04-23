@@ -5,6 +5,24 @@ from data import fetch_alpha_vantage_data
 DB_NAME = "stocks.db"
 
 def insert_alpha_weekly_data(symbol):
+    """
+    Fetches weekly stock data for a given symbol using Alpha Vantage
+    and inserts the 10 most recent weeks of data into the database.
+
+    Parameters:
+    symbol (str): The stock ticker symbol (e.g., "AAPL").
+
+    What the code does:
+    - Connects to the SQLite database (stocks.db).
+    - Inserts the symbol into the 'stocks' table.
+    - Fetches data from Alpha Vantage.
+    - Extracts and inserts up to 10 weeks of data into the 'weekly_data' table.
+    - Each entry includes open, high, low, close, volume, and date.
+
+    Returns:
+    None: This function does not return any value. It modifies the database by inserting data.
+    """
+    
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     cur.execute("INSERT OR IGNORE INTO stocks (symbol) VALUES (?)", (symbol,))
