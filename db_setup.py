@@ -1,6 +1,20 @@
 import sqlite3
 
 def setup_database():
+     """
+    Initializes the SQLite database by creating necessary tables if they do not exist.
+
+    Parameters: None
+
+    What the code does:
+    - Connects to a database named 'stocks.db'.
+    - Creates the 'stocks' table with 'id' and 'symbol'.
+    - Creates the 'weekly_data' table with stock metrics and a foreign key reference to 'stocks'.
+
+    Returns:
+    None: This function does not return any value. 
+    """
+    
     conn = sqlite3.connect("stocks.db")
     cur = conn.cursor()
     cur.execute("""
